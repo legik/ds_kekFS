@@ -11,7 +11,7 @@ class HandlerLogin(Handler):
     def __init__(self):
         super(HandlerLogin, self).__init__()
 
-    def run(selfs, *args):
+    def run(self, *args):
         request = args[0]
         session = args[1]
 
@@ -23,11 +23,21 @@ class HandlerLogin(Handler):
         return 'authorized', 200
 
 
+class HandlerLogout(Handler):
+    def __init__(self):
+        super(HandlerLogout, self).__init__()
+
+    def run(self, *args):
+        session = args[0]
+        session.clear()
+        return 'logout', 200
+
+
 class HandlerRead(Handler):
     def __init__(self):
         super(HandlerRead, self).__init__()
 
-    def run(selfs, *args):
+    def run(self, *args):
         print('HandlerRead is started. file {}'.format(args[0]))
         return ''
 
@@ -79,8 +89,11 @@ class HandlerRmDir(Handler):
 
 
 def create_handler(type):
-    handlers = {'read': HandlerRead(), 'write': HandlerWrite(), 'delete': HandlerDelete(),
-                'size': HandlerSize(), 'mkdir': HandlerMkDir(), 'rmdir': HandlerRmDir()}
+    handlers = {'login': HandlerLogin(), 'logout': HandlerLogout(),
+        'read': HandlerRead(), 'write': HandlerWrite(), 'delete': HandlerDelete(),
+        'size': HandlerSize(), 'mkdir': HandlerMkDir(), 'rmdir': HandlerRmDir()
+    }
+
     if type in handlers.keys():
         return handlers[type]
     else:

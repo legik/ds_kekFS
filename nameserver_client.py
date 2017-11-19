@@ -2,9 +2,6 @@
 from flask import Flask
 from flask import session
 from flask import request
-from flask import redirect
-from flask import url_for
-from flask import flash
 
 from client_handler import create_handler
 from os import urandom
@@ -37,8 +34,7 @@ def request_login():
 @app.route('/logout')
 @login_required
 def request_logout():
-    session.clear()
-    return ''
+    return create_handler('logout').run(session)
 
 
 @app.route('/read/<file>')
