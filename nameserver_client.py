@@ -8,7 +8,7 @@ from os import urandom
 from functools import wraps
 
 
-app = Flask(__name__)
+flask_ns_client = Flask(__name__)
 
 
 def login_required(f):
@@ -20,59 +20,58 @@ def login_required(f):
             return 'You need to login first\n', 401
     return wrap
 
-
-@app.route('/')
+@flask_ns_client.route('/')
 def request_index():
     return ''
 
 
-@app.route('/login', methods=['POST'])
+@flask_ns_client.route('/login', methods=['POST'])
 def request_login():
     return create_handler('login').run(request, session)
 
 
-@app.route('/logout')
+@flask_ns_client.route('/logout')
 @login_required
 def request_logout():
     return create_handler('logout').run(session)
 
 
-@app.route('/read/<file>')
+@flask_ns_client.route('/read/<file>')
 @login_required
 def request_read(file):
     return create_handler('read').run(file)
 
 
-@app.route('/write/<file>')
+@flask_ns_client.route('/write/<file>')
 @login_required
 def request_write(file):
     return create_handler('write').run(file)
 
 
-@app.route('/delete/<file>')
+@flask_ns_client.route('/delete/<file>')
 @login_required
 def request_delete(file):
     return create_handler('delete').run(file)
 
 
-@app.route('/size/<file>')
+@flask_ns_client.route('/size/<file>')
 @login_required
 def request_size(file):
     return create_handler('size').run(file)
 
 
-@app.route('/mkdir/<file>')
+@flask_ns_client.route('/mkdir/<file>')
 @login_required
 def request_mkdir(file):
     return create_handler('mkdir').run(file)
 
 
-@app.route('/rmdir/<file>')
+@flask_ns_client.route('/rmdir/<file>')
 @login_required
 def request_rmdir(file):
     return create_handler('rmdir').run(file)
 
 
 if __name__ == '__main__':
-    app.secret_key = urandom(12)
-    app.run()
+    flask_ns_client.secret_key = urandom(12)
+    flask_ns_client.run(host='0.0.0.0', port=5000)
