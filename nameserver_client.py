@@ -1,11 +1,11 @@
+from functools import wraps
+from os import urandom
 from flask import Flask
-from flask import session
 from flask import request
-from sql import *
+from flask import session
 
 from client_handler import create_handler
-from os import urandom
-from functools import wraps
+
 
 flask_ns_client = Flask(__name__)
 
