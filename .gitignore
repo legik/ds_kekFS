@@ -3,4 +3,5 @@ __pycache__/*
 env/*
 nameserver/__pycache__/*
 storage_server/env/*
-nameserver/cfg.py
+db/cfg.py
+db/__pycache__/*

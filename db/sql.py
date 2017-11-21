@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from nameserver import cfg
+from db import cfg
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -14,6 +14,7 @@ class User(db.Model):
     password = db.Column(db.String(30), nullable=False)
     cluster = db.Column(db.Integer, db.ForeignKey('cluster.id'),
                         nullable=False)
+    port = db.Column(db.Integer, nullable=False)
     files = db.relationship('File', backref='owner', lazy='dynamic')
     # TODO: add size constrain
     size = db.Column(db.Integer, nullable=False)

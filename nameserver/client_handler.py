@@ -1,4 +1,4 @@
-from nameserver import sql
+from db import sql
 import requests
 
 
