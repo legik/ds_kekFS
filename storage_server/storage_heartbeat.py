@@ -1,6 +1,7 @@
 
 import requests
-import config_s
+import config
+
 
 def send_live():
     while True:
