@@ -37,12 +37,15 @@ def init(port, username):
     return 'Success\n'
 
 
-@app.route('/uneedupdate/<master_address>', methods=['POST'])
-def schedule_updates(master_address):
+@app.route('/uneedupdate/<address1>/<address2>', methods=['POST'])
+def schedule_updates(address1, address2):
+    for key, value in mapping:
+        new_updater(key, value['p_port'], address1, address2)
     return 'Success'
 
 
-def new_updater(port, username):
+def new_updater(username, port, address1, address2):
+    provider_pool[username] = Popen(['python', 'storage_updater.py', port, address1, address2])
     return
 
 
