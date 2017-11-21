@@ -1,0 +1,2 @@
+
+NAMESERVER='localhost'
