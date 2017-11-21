@@ -1,9 +1,10 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-import cfg
+from .cfg import connection
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = cfg.connection
+app.config['SQLALCHEMY_DATABASE_URI'] = connection
 db = SQLAlchemy(app)
 
 

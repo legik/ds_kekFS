@@ -39,7 +39,7 @@ def request_logout():
 
 
 @flask_ns_client.route('/read/<name>/', defaults={'file_name': ''}, methods=['GET'])
-@flask_ns_client.route('/read/<name>/<file_name>', methods=['GET'])
+@flask_ns_client.route('/read/<name>/<path:file_name>', methods=['GET'])
 # @login_required
 def request_read(name, file_name):
     # s = User.query.all()
@@ -47,31 +47,31 @@ def request_read(name, file_name):
     return create_handler('read').run(name, file_name)
 
 
-@flask_ns_client.route('/write/<name>/<file_name>', methods=['POST'])
+@flask_ns_client.route('/write/<name>/<path:file_name>', methods=['POST'])
 @login_required
 def request_write(name, file_name):
     return create_handler('write').run(name, file_name)
 
 
-@flask_ns_client.route('/delete/<name>/<file_name>', methods=['POST'])
+@flask_ns_client.route('/delete/<name>/<path:file_name>', methods=['POST'])
 @login_required
 def request_delete(name, file_name):
     return create_handler('delete').run(name, file_name)
 
 
-@flask_ns_client.route('/size/<name>/<file_name>', methods=['GET'])
+@flask_ns_client.route('/size/<name>/<path:file_name>', methods=['GET'])
 @login_required
 def request_size(name, file_name):
     return create_handler('size').run(name, file_name)
 
 
-@flask_ns_client.route('/mkdir/<name>/<file_name>', methods=['POST'])
+@flask_ns_client.route('/mkdir/<name>/<path:file_name>', methods=['POST'])
 @login_required
 def request_mkdir(name, file_name):
     return create_handler('mkdir').run(name, file_name)
 
 
-@flask_ns_client.route('/rmdir/<name>/<file_name>', methods=['POST'])
+@flask_ns_client.route('/rmdir/<name>/<path:file_name>', methods=['POST'])
 @login_required
 def request_rmdir(name, file_name):
     return create_handler('rmdir').run(name, file_name)
