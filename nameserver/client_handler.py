@@ -1,4 +1,4 @@
-from . import sql
+from nameserver import sql
 import requests
 
 

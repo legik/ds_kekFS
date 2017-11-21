@@ -3,9 +3,7 @@ from os import urandom
 from flask import Flask
 from flask import request
 from flask import session
-
-from client_handler import create_handler
-
+from nameserver.client_handler import create_handler
 
 flask_ns_client = Flask(__name__)
 

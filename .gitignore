@@ -1,6 +1,6 @@
 .idea/*
 __pycache__/*
 env/*
-cfg.py
 nameserver/__pycache__/*
 storage_server/env/*
+nameserver/cfg.py
