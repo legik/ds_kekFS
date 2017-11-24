@@ -1,6 +1,7 @@
 
 from flask import Flask
-from storage_handler import create_handler
+from flask import request
+from nameserver.storage_handler import create_handler
 
 flask_ns_storage = Flask(__name__)
 
@@ -12,7 +13,8 @@ def request_index():
 
 @flask_ns_storage.route('/alive')
 def request_read():
-    return create_handler('alive').run()
+    remote_addr = request.environ['REMOTE_ADDR']
+    return create_handler('alive').run(remote_addr)
 
 
 if __name__ == '__main__':
