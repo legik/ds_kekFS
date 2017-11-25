@@ -1,8 +1,13 @@
 from db import sql
 import requests
+from flask import make_response
+import random
+import string
+
 
 order = 0
 sql.Cluster.query.all()
+
 
 class Handler:
     def __init__(self):
@@ -12,20 +17,57 @@ class Handler:
         pass
 
 
+class HandlerRegister(Handler):
+    def __init__(self):
+        super(HandlerRegister, self).__init__()
+
+    def run(self, *args):
+        username = args[0]
+        password = args[1]
+        if not sql.User.query.filter_by(alias=str(username)).first():
+            try:
+                users_count = sql.db.session.query(sql.User).count()
+                port = self.choose_port(users_count)
+                cluster = self.choose_cluster(users_count)
+                user = sql.User(alias=str(username), password=str(password), cluster=cluster, port=port, size=200000)
+                create_handler('init').run(username)
+                sql.db.session.add(user)
+                sql.db.session.commit()
+                return 'User successfully registered', 200
+            except:
+                return 'Wrong request parameters', 400
+        else:
+            return 'User already exist', 400
+
+    def choose_port(self, count):
+        return int(8020 + count % 10)
+
+    def choose_cluster(self, count):
+        return int(count / 10 + 1)
+
+
 class HandlerLogin(Handler):
     def __init__(self):
         super(HandlerLogin, self).__init__()
 
     def run(self, *args):
-        request = args[0]
-        session = args[1]
-
-        if request.form['password'] == '' and request.form['username'] == '':
-            session['logged_in'] = True
+        username = args[0]
+        password = args[1]
+        session = args[2]
+        registered_user = sql.User.query.filter_by(alias=str(username), password=str(password)).first()
+        if registered_user is None:
+            return 'Username or Password is invalid', 401
         else:
-            return 'Unauthorized', 401
-
-        return 'authorized', 200
+            s = string.ascii_lowercase + string.digits + string.ascii_uppercase
+            cookie = ''.join(random.sample(s, 40))
+            registered_user.session = str(cookie)
+            sql.db.session.commit()
+            session['user'] = registered_user.alias
+            session['auth'] = cookie
+            resp = make_response('Logged in successfully', 200)
+            resp.set_cookie('user', registered_user.alias)
+            resp.set_cookie('auth', cookie)
+            return resp
 
 
 class HandlerLogout(Handler):
@@ -145,7 +187,7 @@ class HandlerSize(Handler):
                 return 'Wrong request parameters', 400
 
 
-# TODO: обрабатывать самому?
+# TODO: увеличивать size
 class HandlerMkDir(Handler):
     def __init__(self):
         super(HandlerMkDir, self).__init__()
@@ -157,16 +199,20 @@ class HandlerMkDir(Handler):
         user = sql.User.query.filter_by(alias=str(alias)).first()
         if not user:
             return 'Wrong request parameters', 400
-        try:
-            servers = user.tenant
-            ip_main = servers.mains.address
-            port = user.port
-            json_answer = '{{ "servers" : [ "{}:{}" ] }}'.format(ip_main, port)
-            return json_answer
-        except:
-            return 'Wrong request parameters', 400
+        port = user.port
+        client_request = 'mkdir/{}/{}'.format(alias, path)
+        answer = create_handler('request').run(alias, client_request, port)
+        s = '/{}/{}'.format(alias, path)
+        if answer == 200:
+            f = sql.File(name=str(path), size=0, user_id=user.id)
+            sql.db.session.add(f)
+            sql.db.session.commit()
+            return 'Success', 200
+        else:
+            return 'Wrong request parameters', 401
 
 
+#TODO: vsem po spisku udalyat/dobavlyat
 class HandlerRmDir(Handler):
     def __init__(self):
         super(HandlerRmDir, self).__init__()
@@ -197,13 +243,11 @@ class HandlerInit(Handler):
         super(HandlerInit, self).__init__()
 
     def run(self, *args):
-        # TODO: change errors return
         print('HandlerInit is started. user: {} '.format(args[0]))
         alias = args[0]
         user = sql.User.query.filter_by(alias=str(alias)).first()
         if not user:
             return 'Wrong request parameters', 400
-        #TODO change to 8010
         port = user.port
         answer = create_handler('request').run(alias, 'init/' + user.alias, port)
         if answer == 200:
@@ -249,34 +293,6 @@ class HandlerRequest(Handler):
         return r
 
 
-class HandlerRegister(Handler):
-    def __init__(self):
-        super(HandlerRegister, self).__init__()
-
-    def run(self, *args):
-        username = args[0]
-        password = args[1]
-
-        if not sql.User.query.filter_by(alias=str(username)).first():
-            # try:
-            users_count = sql.db.session.query(sql.User).count()
-            port = self.choose_port(users_count)
-            cluster = self.choose_cluster(users_count)
-            user = sql.User(alias=str(username), password=str(password), cluster=cluster, port=port, size=2000)
-            create_handler('init').run(username)
-            sql.db.session.add(user)
-            sql.db.session.commit()
-            return 'User successfully registered', 200
-            # except:
-            #     return 'Wrong request parameters', 400
-        else:
-            return 'User already exist', 400
-
-    def choose_port(self, count):
-        return int(8020 + count % 10)
-
-    def choose_cluster(self, count):
-        return int(count / 10 + 1)
 
 
 def create_handler(type):

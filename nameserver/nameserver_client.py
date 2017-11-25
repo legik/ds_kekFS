@@ -4,29 +4,26 @@ from flask import Flask
 from flask import request
 from flask import session
 from nameserver.client_handler import create_handler
-from flask_login import LoginManager
 from db import sql
 
 flask_ns_client = Flask(__name__)
-
-login_manager = LoginManager()
-login_manager.init_app(flask_ns_client)
-
-
-# @login_manager.user_loader()
-# def load_user(id):
-#     sql.User.query.get(int(id))
 
 
 def login_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
-        if 'logged_in' not in session:
-            return f(*args, **kwargs)
+        if 'user' not in request.cookies:
+            return 'You need to login first', 403
         else:
-            # return 'You need to login first\n', 401
-            return f(*args, **kwargs)
-
+            user_name = request.cookies['user']
+            user = sql.User.query.filter_by(alias=str(user_name)).first()
+            if not user:
+                return 'Not valid credentials', 401
+            else:
+                if user.session == request.cookies['auth']:
+                    return f(*args, **kwargs)
+                else:
+                    return 'You need to login first\n', 401
     return wrap
 
 
@@ -40,9 +37,9 @@ def register(username, password):
     return create_handler('register').run(username, password)
 
 
-@flask_ns_client.route('/login', methods=['GET', 'POST'])
-def request_login():
-    return create_handler('login').run(request, session)
+@flask_ns_client.route('/login/<username>/<password>', methods=['POST'])
+def request_login(username, password):
+    return create_handler('login').run(username, password, session)
 
 
 @flask_ns_client.route('/logout')
@@ -96,4 +93,4 @@ def request_init(name):
 
 if __name__ == '__main__':
     flask_ns_client.secret_key = urandom(12)
-    flask_ns_client.run(host='0.0.0.0', port=5000)
+    flask_ns_client.run(host='0.0.0.0', port=5000, debug=False)
