@@ -4,8 +4,18 @@ from flask import Flask
 from flask import request
 from flask import session
 from nameserver.client_handler import create_handler
+from flask_login import LoginManager
+from db import sql
 
 flask_ns_client = Flask(__name__)
+
+login_manager = LoginManager()
+login_manager.init_app(flask_ns_client)
+
+
+# @login_manager.user_loader()
+# def load_user(id):
+#     sql.User.query.get(int(id))
 
 
 def login_required(f):
@@ -25,7 +35,12 @@ def request_index():
     return ''
 
 
-@flask_ns_client.route('/login', methods=['POST'])
+@flask_ns_client.route('/register/<username>/<password>', methods=['POST'])
+def register(username, password):
+    return create_handler('register').run(username, password)
+
+
+@flask_ns_client.route('/login', methods=['GET', 'POST'])
 def request_login():
     return create_handler('login').run(request, session)
 
@@ -38,10 +53,8 @@ def request_logout():
 
 @flask_ns_client.route('/read/<name>/', defaults={'file_name': ''}, methods=['GET'])
 @flask_ns_client.route('/read/<name>/<path:file_name>', methods=['GET'])
-# @login_required
+@login_required
 def request_read(name, file_name):
-    # s = User.query.all()
-    # print (s)
     return create_handler('read').run(name, file_name)
 
 
