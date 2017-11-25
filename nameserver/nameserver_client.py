@@ -3,6 +3,12 @@ from os import urandom
 from flask import Flask
 from flask import request
 from flask import session
+
+import sys
+import os.path
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from nameserver.client_handler import create_handler
 from db import sql
 
@@ -93,4 +99,4 @@ def request_init(name):
 
 if __name__ == '__main__':
     flask_ns_client.secret_key = urandom(12)
-    flask_ns_client.run(host='0.0.0.0', port=5000, debug=True)
+    flask_ns_client.run(host='0.0.0.0', port=5000, debug=False)

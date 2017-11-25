@@ -1,6 +1,11 @@
 
 from flask import Flask
 from flask import request
+import sys
+import os.path
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from nameserver.storage_handler import create_handler
 
 flask_ns_storage = Flask(__name__)
