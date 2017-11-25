@@ -30,9 +30,10 @@ class HandlerRegister(Handler):
                 port = self.choose_port(users_count)
                 cluster = self.choose_cluster(users_count)
                 user = sql.User(alias=str(username), password=str(password), cluster=cluster, port=port, size=200000)
-                create_handler('init').run(username)
                 sql.db.session.add(user)
                 sql.db.session.commit()
+                create_handler('init').run(username)
+
                 return 'User successfully registered', 200
             except:
                 return 'Wrong request parameters', 400
@@ -151,7 +152,7 @@ class HandlerDelete(Handler):
         user = sql.User.query.filter_by(alias=str(alias)).first()
         if not user:
             return 'Wrong request parameters', 400
-        port = user.port
+        port = user.port + 10
         client_request = 'delete/{}/{}'.format(alias, path)
         answer = create_handler('request').run(alias, client_request, port)
         s = '/{}/{}'.format(alias, path)
@@ -176,8 +177,8 @@ class HandlerSize(Handler):
         user = sql.User.query.filter_by(alias=str(alias)).first()
         if not user:
             return 'Wrong request parameters', 400
-        filter = '/{}/{}'.format(alias, path)
-        file = sql.File.query.filter_by(name=filter).first()
+        size_filter = '/{}/{}'.format(alias, path)
+        file = sql.File.query.filter_by(name=size_filter).first()
         if not file:
             return 'File not found', 404
         else:
@@ -187,7 +188,6 @@ class HandlerSize(Handler):
                 return 'Wrong request parameters', 400
 
 
-# TODO: увеличивать size
 class HandlerMkDir(Handler):
     def __init__(self):
         super(HandlerMkDir, self).__init__()
@@ -199,12 +199,12 @@ class HandlerMkDir(Handler):
         user = sql.User.query.filter_by(alias=str(alias)).first()
         if not user:
             return 'Wrong request parameters', 400
-        port = user.port
-        client_request = 'mkdir/{}/{}'.format(alias, path)
+        port = user.port + 10
+        client_request = 'mkdir/{}'.format(path)
         answer = create_handler('request').run(alias, client_request, port)
         s = '/{}/{}'.format(alias, path)
         if answer == 200:
-            f = sql.File(name=str(path), size=0, user_id=user.id)
+            f = sql.File(name=str(s), size=0, user_id=user.id)
             sql.db.session.add(f)
             sql.db.session.commit()
             return 'Success', 200
@@ -212,7 +212,6 @@ class HandlerMkDir(Handler):
             return 'Wrong request parameters', 401
 
 
-#TODO: vsem po spisku udalyat/dobavlyat
 class HandlerRmDir(Handler):
     def __init__(self):
         super(HandlerRmDir, self).__init__()
@@ -224,8 +223,8 @@ class HandlerRmDir(Handler):
         user = sql.User.query.filter_by(alias=str(alias)).first()
         if not user:
             return 'Wrong request parameters', 400
-        port = user.port
-        client_request = 'rmdir/{}/{}'.format(alias, path)
+        port = user.port + 10
+        client_request = 'rmdir/{}'.format(path)
         answer = create_handler('request').run(alias, client_request, port)
         s = '/{}/{}%'.format(alias, path)
         if answer == 200:
@@ -248,8 +247,10 @@ class HandlerInit(Handler):
         user = sql.User.query.filter_by(alias=str(alias)).first()
         if not user:
             return 'Wrong request parameters', 400
-        port = user.port
-        answer = create_handler('request').run(alias, 'init/' + user.alias, port)
+        port = 8010
+        command = 'init/{}/{}'.format(user.port, alias)
+        answer = create_handler('request').run(alias, command, port)
+
         if answer == 200:
             for f in sql.File.query.all():
                 if f.owner == user:
@@ -273,36 +274,32 @@ class HandlerRequest(Handler):
         main_server = '{}:{}'.format(servers.mains.address, port)
         slave_server_1 = '{}:{}'.format(servers.seconds1.address, port)
         slave_server_2 = '{}:{}'.format(servers.seconds2.address, port)
-        r = self.request_post(alias, command, main_server)
+        r = self.request_post(command, main_server)
         # TODO: change returning values to requests, not requests code
+        answer = 400
         if r.status_code == 200:
-            return 200
-        elif self.request_post(alias, command, slave_server_1).status_code == 200:
-            return 200
-        elif self.request_post(alias, command, slave_server_2).status_code == 200:
-            return 200
-        else:
-            return r.status_code
+            answer = 200
+        if self.request_post(command, slave_server_1).status_code == 200:
+            answer = 200
+        if self.request_post(command, slave_server_2).status_code == 200:
+            answer = 200
+        return answer
 
     def request_post(self, *args):
-        alias = args[0]
-        command = args[1]
-        address = args[2]
+        command = args[0]
+        address = args[1]
         r = requests.post('http://{}/{}'.format(address, command), data={})
-        # TODO: catch exceptions: unable to connect, etc.
         return r
 
 
-
-
-def create_handler(type):
+def create_handler(handler_type):
     handlers = {'login': HandlerLogin(), 'logout': HandlerLogout(),
                 'read': HandlerRead(), 'write': HandlerWrite(), 'delete': HandlerDelete(),
                 'size': HandlerSize(), 'mkdir': HandlerMkDir(), 'rmdir': HandlerRmDir(),
                 'init': HandlerInit(), 'request': HandlerRequest(), 'register': HandlerRegister()
                 }
 
-    if type in handlers.keys():
-        return handlers[type]
+    if handler_type in handlers.keys():
+        return handlers[handler_type]
     else:
         raise Exception('Unknown Handler')
