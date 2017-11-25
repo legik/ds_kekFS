@@ -17,6 +17,7 @@ class HandlerAlive(Handler):
         super(HandlerAlive, self).__init__()
         self.servers_alive = {}
         self.mutex = Lock()
+        self.delta = 5
         self.check_life_server()
 
     def run(self, *args):
@@ -35,7 +36,6 @@ class HandlerAlive(Handler):
         self.mutex.release()
 
         current_time = int(time())
-        delta = 1
 
         print('Check value: {}'.format(current_time))
 
@@ -43,7 +43,7 @@ class HandlerAlive(Handler):
         for server in servers:
             addr = server.address
             if addr in serv_stat:
-                if current_time - serv_stat[addr] > delta:
+                if current_time - serv_stat[addr] > self.delta:
                     print('server-{} rip'.format(addr))
                     HandlerAlive.swap_prime_server(server)
                 else:
@@ -53,7 +53,7 @@ class HandlerAlive(Handler):
                 print('server-{} rip'.format(addr))
                 HandlerAlive.swap_prime_server(server)
 
-        Timer(10, self.check_life_server).start()
+        Timer(self.delta, self.check_life_server).start()
 
     @staticmethod
     def swap_prime_server(server):
@@ -83,12 +83,33 @@ class HandlerAlive(Handler):
         sql.db.session.commit()
 
 
+class HandlerSubmitted(Handler):
+    def __init__(self):
+        super(HandlerSubmitted, self).__init__()
+
+    def run(self, *args):
+        print('HandlerSubmitted is started.')
+
+        size = args[0]
+        path = args[1]
+
+        user_name = path.split('/')[0]
+        user_id = sql.User.query.filter_by(alias=user_name).first().id
+        print(user_id)
+
+        file = sql.File(name=path, size=size, user_id=user_id)
+        sql.db.session.add(file)
+        sql.db.session.commit()
+
+        return '', 200
+
+
 handlerAlive = HandlerAlive()
 
 
 def create_handler(type):
     global handlerAlive
-    handlers = {'alive': handlerAlive}
+    handlers = {'alive': handlerAlive, 'submitted': HandlerSubmitted()}
 
     if type in handlers.keys():
         return handlers[type]
