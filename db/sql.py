@@ -10,18 +10,17 @@ db = SQLAlchemy(app)
 
 
 class User(db.Model):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     alias = db.Column(db.String(10), unique=True, nullable=False)
     password = db.Column(db.String(30), nullable=False)
     cluster = db.Column(db.Integer, db.ForeignKey('cluster.id'),
                         nullable=False)
     port = db.Column(db.Integer, nullable=False)
+    session = db.Column(db.String(40))
     files = db.relationship('File', backref='owner', lazy='dynamic')
     # TODO: add size constrain
     size = db.Column(db.Integer, nullable=False)
-
-    def __repr__(self):
-        return '<User %r>' % self.alias
 
     def is_authenticated(self):
         return True
@@ -35,6 +34,8 @@ class User(db.Model):
     def get_id(self):
         return unicode(self.id)
 
+    def __repr__(self):
+        return '<User %r>' % self.alias
 
 class Cluster(db.Model):
     id = db.Column(db.Integer, primary_key=True)

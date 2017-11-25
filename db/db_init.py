@@ -4,7 +4,7 @@ from db.sql import db, Server, Cluster, User, File
 print('DB initialization started...')
 print('Starting creating servers...')
 # Servers
-server1 = Server(status=True, address='127.0.0.1')
+server1 = Server(status=True, address='188.130.155.44')
 server2 = Server(status=True, address='127.0.0.2')
 server3 = Server(status=True, address='127.0.0.3')
 server4 = Server(status=True, address='127.0.0.4')
