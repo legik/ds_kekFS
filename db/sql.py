@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_login._compat import unicode
 from flask_sqlalchemy import SQLAlchemy
 from db import cfg
 
@@ -21,6 +22,18 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User %r>' % self.alias
+
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return unicode(self.id)
 
 
 class Cluster(db.Model):
