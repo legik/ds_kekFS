@@ -97,6 +97,12 @@ def request_init(name):
     return create_handler('init').run(name)
 
 
+@flask_ns_client.route('/alive', methods=['POST'])
+def request_test():
+    r = request.form['alive']
+    return create_handler('alive').run(r)
+
+
 if __name__ == '__main__':
     flask_ns_client.secret_key = urandom(12)
     flask_ns_client.run(host='0.0.0.0', port=5000, debug=False)

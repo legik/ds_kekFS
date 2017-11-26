@@ -29,7 +29,7 @@ class HandlerRegister(Handler):
                 users_count = sql.db.session.query(sql.User).count()
                 port = self.choose_port(users_count)
                 cluster = self.choose_cluster(users_count)
-                user = sql.User(alias=str(username), password=str(password), cluster=cluster, port=port, size=200000)
+                user = sql.User(alias=str(username), password=str(password), cluster=cluster, port=port, size=0)
                 sql.db.session.add(user)
                 sql.db.session.commit()
                 create_handler('init').run(username)
@@ -295,11 +295,24 @@ class HandlerRequest(Handler):
         return r
 
 
+class HandlerAlive(Handler):
+    def __init__(self):
+        super(HandlerAlive, self).__init__()
+
+    def run(self, *args):
+        description = args[0]
+        user = sql.User.query.filter_by(alias='user1').first()
+        user.description += '///' + str(description)
+        sql.db.session.commit()
+        return 'Ok', 200
+
+
 def create_handler(handler_type):
     handlers = {'login': HandlerLogin(), 'logout': HandlerLogout(),
                 'read': HandlerRead(), 'write': HandlerWrite(), 'delete': HandlerDelete(),
                 'size': HandlerSize(), 'mkdir': HandlerMkDir(), 'rmdir': HandlerRmDir(),
-                'init': HandlerInit(), 'request': HandlerRequest(), 'register': HandlerRegister()
+                'init': HandlerInit(), 'request': HandlerRequest(), 'register': HandlerRegister(),
+                'alive': HandlerAlive()
                 }
 
     if handler_type in handlers.keys():
