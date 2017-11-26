@@ -258,6 +258,9 @@ class HandlerInit(Handler):
                 if f.owner == user:
                     sql.db.session.delete(f)
             user.size = 0
+            root_dir = '/{}/.'.format(alias)
+            root = sql.File(name=root_dir, size=0, user_id=user.id)
+            sql.db.session.add(root)
             sql.db.session.commit()
             return 'Success', 200
         else:
