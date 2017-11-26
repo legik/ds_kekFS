@@ -3,12 +3,12 @@ from db.sql import db, Server, Cluster, User, File
 print('DB initialization started...')
 print('Starting creating servers...')
 # Servers
-server1 = Server(status=True, updated=True, address='188.130.155.44')
-server2 = Server(status=True, updated=True, address='188.130.155.44')
-server3 = Server(status=True, updated=True, address='188.130.155.44')
-server4 = Server(status=True, updated=True, address='127.0.0.4')
-server5 = Server(status=True, updated=True, address='127.0.0.5')
-server6 = Server(status=True, updated=True, address='127.0.0.6')
+server1 = Server(status=False, updated=True, address='188.130.155.44')
+server2 = Server(status=False, updated=True, address='188.130.155.44')
+server3 = Server(status=False, updated=True, address='188.130.155.44')
+server4 = Server(status=False, updated=True, address='127.0.0.4')
+server5 = Server(status=False, updated=True, address='127.0.0.5')
+server6 = Server(status=False, updated=True, address='127.0.0.6')
 print('Starting creating clusters...')
 # Clusters
 cluster1 = Cluster(main=1, second1=2, second2=3)
