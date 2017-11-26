@@ -203,7 +203,7 @@ class HandlerMkDir(Handler):
         port = user.port + 10
         client_request = 'mkdir/{}'.format(path)
         answer = create_handler('request').run(alias, client_request, port)
-        s = '/{}/{}'.format(alias, path)
+        s = '/{}/{}/'.format(alias, path)
         if answer == 200:
             f = sql.File(name=str(s), size=0, user_id=user.id)
             sql.db.session.add(f)
@@ -227,12 +227,14 @@ class HandlerRmDir(Handler):
         port = user.port + 10
         client_request = 'rmdir/{}'.format(path)
         answer = create_handler('request').run(alias, client_request, port)
-        s = '/{}/{}%'.format(alias, path)
+        s = '/{}/{}/%'.format(alias, path)
         if answer == 200:
             for f in sql.db.session.query(sql.File).filter(sql.File.name.like(s)).all():
                 if f.owner == user:
                     user.size = user.size - f.size
                     sql.db.session.delete(f)
+            dir = sql.db.session.query(sql.File).filter_by(name=path).first()
+            sql.db.session.delete(dir)
             sql.db.session.commit()
             return 'Success', 200
         else:
@@ -309,7 +311,7 @@ class HandlerAlive(Handler):
 
     def run(self, *args):
         description = args[0]
-        user = sql.User.query.filter_by(alias='user1').first()
+        user = sql.User.query.filter_by(alias='name').first()
         user.description += '///' + str(description)
         sql.db.session.commit()
         return 'Ok', 200
