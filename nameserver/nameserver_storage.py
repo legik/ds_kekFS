@@ -18,8 +18,12 @@ def request_index():
 
 @flask_ns_storage.route('/alive')
 def request_read():
-    remote_addr = request.environ['REMOTE_ADDR']
-    return create_handler('alive').run(remote_addr)
+    return create_handler('alive').run(request.environ['REMOTE_ADDR'])
+
+
+@flask_ns_storage.route('/submitted/<size>/<path:file_name>', methods=['GET'])
+def request_submitted(size, file_name):
+    return create_handler('submitted').run(size, file_name)
 
 
 if __name__ == '__main__':
