@@ -159,6 +159,7 @@ class HandlerDelete(Handler):
         if answer == 200:
             for f in sql.db.session.query(sql.File).filter(sql.File.name == s).all():
                 if f.owner == user:
+                    user.size = user.size - f.size
                     sql.db.session.delete(f)
             sql.db.session.commit()
             return 'Success', 200
@@ -230,6 +231,7 @@ class HandlerRmDir(Handler):
         if answer == 200:
             for f in sql.db.session.query(sql.File).filter(sql.File.name.like(s)).all():
                 if f.owner == user:
+                    user.size = user.size - f.size
                     sql.db.session.delete(f)
             sql.db.session.commit()
             return 'Success', 200
@@ -255,6 +257,7 @@ class HandlerInit(Handler):
             for f in sql.File.query.all():
                 if f.owner == user:
                     sql.db.session.delete(f)
+            user.size = 0
             sql.db.session.commit()
             return 'Success', 200
         else:
