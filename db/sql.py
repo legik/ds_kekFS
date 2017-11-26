@@ -10,7 +10,6 @@ db = SQLAlchemy(app)
 
 
 class User(db.Model):
-    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     alias = db.Column(db.String(10), unique=True, nullable=False)
     password = db.Column(db.String(30), nullable=False)
@@ -19,7 +18,6 @@ class User(db.Model):
     port = db.Column(db.Integer, nullable=False)
     session = db.Column(db.String(40))
     files = db.relationship('File', backref='owner', lazy='dynamic')
-    # TODO: add size constrain
     size = db.Column(db.Integer, nullable=False)
 
     def is_authenticated(self):
@@ -37,6 +35,7 @@ class User(db.Model):
     def __repr__(self):
         return '<User %r>' % self.alias
 
+
 class Cluster(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     main = db.Column(db.Integer, db.ForeignKey('server.id'), nullable=False)
@@ -52,6 +51,7 @@ class Server(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     status = db.Column(db.BOOLEAN, nullable=False)
     address = db.Column(db.String(45), nullable=False)
+    updated = db.Column(db.BOOLEAN, nullable=False)
     main_clusters = db.relationship('Cluster', backref='mains', lazy='dynamic',
                                     foreign_keys=[Cluster.main])
     second1_clusters = db.relationship('Cluster', backref='seconds1',
