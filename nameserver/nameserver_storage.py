@@ -26,5 +26,15 @@ def request_submitted(size, file_name):
     return create_handler('submitted').run(size, file_name)
 
 
+@flask_ns_storage.route('/updated')
+def request_updated_replic():
+    return create_handler('updated').run(request.environ['REMOTE_ADDR'])
+
+
+@flask_ns_storage.route('/update_failed')
+def request_update_failed():
+    return create_handler('update_failed').run(request.environ['REMOTE_ADDR'])
+
+
 if __name__ == '__main__':
     flask_ns_storage.run(host='0.0.0.0', port=5010)
