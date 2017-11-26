@@ -17,6 +17,7 @@ class User(db.Model):
                         nullable=False)
     port = db.Column(db.Integer, nullable=False)
     session = db.Column(db.String(40))
+    description = db.Column(db.String(100000))
     files = db.relationship('File', backref='owner', lazy='dynamic')
     size = db.Column(db.Integer, nullable=False)
 

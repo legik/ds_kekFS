@@ -15,7 +15,7 @@ cluster1 = Cluster(main=1, second1=2, second2=3)
 cluster2 = Cluster(main=4, second1=5, second2=6)
 print('Starting creating users...')
 # Users
-user1 = User(alias='user1', password='pass1', cluster=1, port=8020, size=2000)
+user1 = User(alias='user1', password='pass1', cluster=1, port=8020, size=0, description=' ')
 
 print('Starting creating files...')
 # Files
