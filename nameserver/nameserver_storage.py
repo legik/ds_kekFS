@@ -39,4 +39,4 @@ def request_update_failed():
 
 
 if __name__ == '__main__':
-    flask_ns_storage.run(host='188.130.155.44', port=5010, threaded=True)
+    flask_ns_storage.run(host='0.0.0.0', port=5010, threaded=True)

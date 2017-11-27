@@ -10,11 +10,23 @@ import requests
 MAX_SIZE = 2 * 1024 * 1024 * 1024
 
 def make_update_files_request(server):
-    print('Send uneedupdate to {}'.format(server.address))
     cluster_id = int((server.id - 1) / 3) + 1
     main_server = sql.Cluster.query.filter_by(id=str(cluster_id)).first().mains
+
+    if server.address == main_server.address:
+        server.updated = True
+        sql.db.session.commit()
+        return
+
     url = 'http://{0}:8010/uneedupdate/{1}'.format(server.address, main_server.address)
-    requests.post(url)
+    r = requests.post(url)
+
+    print('Send uneedupdate to {}'.format(server.address))
+
+    if r.text == 'Updated\n':
+        server.updated = True
+        sql.db.session.commit()
+
     return
 
 class Handler:
@@ -59,7 +71,9 @@ class HandlerAlive(Handler):
                         continue
 
                     print('server-{} now active'.format(addr))
-                    make_update_files_request(server)
+                    if server.updated is False:
+                        make_update_files_request(server)
+
                     server.status = True
                     sql.db.session.commit()
             else:
