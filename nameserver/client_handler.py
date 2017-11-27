@@ -3,7 +3,7 @@ import requests
 from flask import make_response
 import random
 import string
-
+import json
 
 order = 0
 sql.Cluster.query.all()
@@ -92,22 +92,29 @@ class HandlerRead(Handler):
         user = sql.User.query.filter_by(alias=str(user_name)).first()
         if not user:
             return 'User does not exist', 400
-
         if not sql.File.query.filter_by(name=str('/' + user_name + '/' + path)).first():
             return 'File not found', 404
         else:
             try:
                 servers = user.tenant
                 port = user.port
-                ip_main = '{}:{}'.format(servers.mains.address, port)
-                ip_second_1 = '{}:{}'.format(servers.seconds1.address, port)
-                ip_second_2 = '{}:{}'.format(servers.seconds2.address, port)
-                order_array = [ip_main, ip_second_1, ip_second_2]
-                json_answer = '{{ "servers" : [ "{}", "{}","{}" ] }}'.format(order_array[order % 3],
-                                                                             order_array[(order + 1) % 3],
-                                                                             order_array[(order + 2) % 3])
+                d = {}
+                order_array = []
+                if servers.mains.status:
+                    ip_main = '{}:{}'.format(servers.mains.address, port)
+                    order_array.append(ip_main)
+                if servers.seconds1.status:
+                    ip_second_1 = '{}:{}'.format(servers.seconds1.address, port)
+                    order_array.append(ip_second_1)
+                if servers.seconds2.status:
+                    ip_second_2 = '{}:{}'.format(servers.seconds2.address, port)
+                    order_array.append(ip_second_2)
+                d['servers'] = self.shift(order, order_array)
+                print(json.dumps(d))
                 self.increment()
-                return json_answer, 200
+                if len(order_array) == 0:
+                    return 'No servers available now', 400
+                return json.dumps(d), 200
             except:
                 return 'Wrong request parameters', 400
 
@@ -117,6 +124,9 @@ class HandlerRead(Handler):
             order = order + 1
         else:
             order = 0
+
+    def shift(self, key, array):
+        return array[-key:] + array[:-key]
 
 
 class HandlerWrite(Handler):
@@ -180,11 +190,13 @@ class HandlerSize(Handler):
             return 'Wrong request parameters', 400
         size_filter = '/{}/{}'.format(alias, path)
         file = sql.File.query.filter_by(name=size_filter).first()
+        d = {}
         if not file:
             return 'File not found', 404
         else:
             try:
-                return '{{ "size" : ' + str(file.size) + ' }}'
+                d['size'] = file.size
+                return json.dumps(d)
             except:
                 return 'Wrong request parameters', 400
 
@@ -297,7 +309,6 @@ class HandlerRequest(Handler):
 
         return 400
 
-
     def request_post(self, *args):
         command = args[0]
         address = args[1]
@@ -311,7 +322,7 @@ class HandlerAlive(Handler):
 
     def run(self, *args):
         description = args[0]
-        user = sql.User.query.filter_by(alias='name').first()
+        user = sql.User.query.all()[0]
         user.description += '///' + str(description)
         sql.db.session.commit()
         return 'Ok', 200
