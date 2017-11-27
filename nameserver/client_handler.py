@@ -24,7 +24,7 @@ class HandlerRegister(Handler):
     def run(self, *args):
         username = args[0]
         password = args[1]
-        if not sql.User.query.filter_by(alias=str(username)).first():
+        if sql.User.query.filter_by(alias=str(username)).first() is None:
             try:
                 users_count = sql.db.session.query(sql.User).count()
                 port = self.choose_port(users_count)
@@ -262,7 +262,7 @@ class HandlerInit(Handler):
         alias = args[0]
         user = sql.User.query.filter_by(alias=str(alias)).first()
         if not user:
-            return 'Wrong request parameters', 400
+            return 'Wrong request parameters', 406
         port = 8010
         command = 'init/{}/{}'.format(user.port, alias)
         answer = create_handler('request').run(alias, command, port)
@@ -278,7 +278,7 @@ class HandlerInit(Handler):
             sql.db.session.commit()
             return 'Success', 200
         else:
-            return 'Wrong request parameters', 400
+            return 'Wrong request parameters', 408
 
 
 class HandlerRequest(Handler):
@@ -294,10 +294,15 @@ class HandlerRequest(Handler):
 
         # TODO: change returning values to requests, not requests code
 
-        servers = {servers.mains.address: port, servers.seconds1.address: port, servers.seconds2.address: port}
+        servers_array = {servers.mains.address: servers.mains,
+                         servers.seconds1.address: servers.seconds1,
+                         servers.seconds2.address: servers.seconds2}
 
         flag = False
-        for ip, port in servers.items():
+        for ip, serv in servers_array.items():
+            if serv.status is False:
+                continue
+
             addr = '{}:{}'.format(ip, port)
             r = self.request_post(command, addr)
 
@@ -313,6 +318,7 @@ class HandlerRequest(Handler):
         command = args[0]
         address = args[1]
         r = requests.post('http://{}/{}'.format(address, command), data={})
+        print(r)
         return r
 
 
