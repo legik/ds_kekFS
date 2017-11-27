@@ -38,7 +38,7 @@ class HandlerRegister(Handler):
             except:
                 return 'Wrong request parameters', 400
         else:
-            return 'User already exist', 400
+            return 'User already exist', 408
 
     def choose_port(self, count):
         return int(8020 + count % 10)
@@ -277,19 +277,24 @@ class HandlerRequest(Handler):
         port = args[2]
         print('HandlerRequest is started. user: {} command {}'.format(alias, command))
         servers = sql.User.query.filter_by(alias=str(alias)).first().tenant
-        main_server = '{}:{}'.format(servers.mains.address, port)
-        slave_server_1 = '{}:{}'.format(servers.seconds1.address, port)
-        slave_server_2 = '{}:{}'.format(servers.seconds2.address, port)
-        r = self.request_post(command, main_server)
+
         # TODO: change returning values to requests, not requests code
-        answer = 400
-        if r.status_code == 200:
-            answer = 200
-        if self.request_post(command, slave_server_1).status_code == 200:
-            answer = 200
-        if self.request_post(command, slave_server_2).status_code == 200:
-            answer = 200
-        return answer
+
+        servers = {servers.mains.address: port, servers.seconds1.address: port, servers.seconds2.address: port}
+
+        flag = False
+        for ip, port in servers.items():
+            addr = '{}:{}'.format(ip, port)
+            r = self.request_post(command, addr)
+
+            if r.status_code == 200:
+                flag = True
+
+        if flag is True:
+            return 200
+
+        return 400
+
 
     def request_post(self, *args):
         command = args[0]

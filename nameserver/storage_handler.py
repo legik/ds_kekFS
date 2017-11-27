@@ -8,14 +8,12 @@ import requests
 
 
 def make_update_files_request(server):
+    print('Send uneedupdate to {}'.format(server.address))
     cluster_id = int((server.id - 1) / 3) + 1
     main_server = sql.Cluster.query.filter_by(id=str(cluster_id)).first().mains
     url = 'http://{0}:8010/uneedupdate/{1}'.format(server.address, main_server.address)
     requests.post(url)
-
-    server.updated = True
-    sql.db.session.commit()
-
+    return
 
 class Handler:
     def __init__(self):
@@ -31,71 +29,69 @@ class HandlerAlive(Handler):
         self.servers_alive = {}
         self.mutex = Lock()
         self.delta = 7
-        self.check_life_server()
 
     def run(self, *args):
-        print('HandlerAlive is started.')
         serv_addr = args[0]
-
-        self.mutex.acquire()
-        self.servers_alive[serv_addr] = int(time())
-        self.mutex.release()
+        with self.mutex:
+            self.servers_alive[serv_addr] = int(time())
+        self.check_life_server()
 
         return '', 200
 
     def check_life_server(self):
-        self.mutex.acquire()
-        serv_stat = self.servers_alive
-        self.mutex.release()
+        with self.mutex:
+            serv_stat = self.servers_alive.copy()
 
         current_time = int(time())
-
-        print('Check value: {}'.format(current_time))
+        print('Current time: {}'.format(current_time))
 
         servers = sql.Server.query.all()
         for server in servers:
             addr = server.address
             if addr in serv_stat:
                 if current_time - serv_stat[addr] > self.delta:
-                    print('server-{} rip'.format(addr))
+                    print('server-{0} rip. {1} - {2}'.format(addr, current_time, serv_stat[addr]))
                     HandlerAlive.swap_prime_server(server)
                 else:
-                    print('server-{} active'.format(addr))
-
                     if server.status is True:
                         continue
 
+                    print('server-{} now active'.format(addr))
                     make_update_files_request(server)
                     server.status = True
                     sql.db.session.commit()
             else:
-                print('server-{} rip'.format(addr))
+                #print('server-{} rip'.format(addr))
                 HandlerAlive.swap_prime_server(server)
 
-        Timer(self.delta, self.check_life_server).start()
+        #Timer(self.delta, self.check_life_server).start()
 
     @staticmethod
     def swap_prime_server(server):
         cluster_id = int((server.id - 1) / 3) + 1
+        cluster = sql.Cluster.query.filter_by(id=str(cluster_id)).first()
         main_server = sql.Cluster.query.filter_by(id=str(cluster_id)).first().mains
         slave1 = sql.Cluster.query.filter_by(id=str(cluster_id)).first().seconds1
         slave2 = sql.Cluster.query.filter_by(id=str(cluster_id)).first().seconds2
 
         server.status = False
+        server.updated = False
         sql.db.session.commit()
 
         is_main_server = (main_server.address == server.address)
         if is_main_server is not True:
             return
 
-        if slave2.status is True:
-            tmp = main_server
-            main_server = slave2
-            slave2 = tmp
-        elif slave1.status is True:
-            tmp = main_server
-            main_server = slave1
-            slave1 = tmp
+        if slave2.status is True and slave2.updated is True :
+            tmp = main_server.id
+            cluster.main = slave2.id
+            cluster.second2 = tmp
+            print('Switch to slave2')
+        elif slave1.status is True and slave1.updated is True:
+            tmp = main_server.id
+            cluster.main = slave1.id
+            cluster.second1 = tmp
+            print('Switch to slave2')
         else:
             print('You are in a world of shit. No valid storage server available')
 
@@ -149,7 +145,7 @@ class HandlerUpdated(Handler):
         server_adr = args[0]
         server = sql.Server.query.filter_by(address=server_adr).first()
 
-        server.updated = False
+        server.updated = True
         sql.db.session.commit()
 
         return '', 200

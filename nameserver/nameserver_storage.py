@@ -1,12 +1,14 @@
 
 from flask import Flask
 from flask import request
+from threading import Thread
 import sys
 import os.path
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from nameserver.storage_handler import create_handler
+from nameserver.storage_handler import handlerAlive
 
 flask_ns_storage = Flask(__name__)
 
@@ -26,15 +28,15 @@ def request_submitted(size, file_name):
     return create_handler('submitted').run(size, file_name)
 
 
-@flask_ns_storage.route('/updated')
+@flask_ns_storage.route('/updated', methods=['POST'])
 def request_updated_replic():
     return create_handler('updated').run(request.environ['REMOTE_ADDR'])
 
 
-@flask_ns_storage.route('/update_failed')
+@flask_ns_storage.route('/update_failed', methods=['POST'])
 def request_update_failed():
     return create_handler('update_failed').run(request.environ['REMOTE_ADDR'])
 
 
 if __name__ == '__main__':
-    flask_ns_storage.run(host='0.0.0.0', port=5010)
+    flask_ns_storage.run(host='188.130.155.44', port=5010, threaded=True)
