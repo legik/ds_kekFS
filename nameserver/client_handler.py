@@ -254,7 +254,7 @@ class HandlerInit(Handler):
         port = 8010
         command = 'init/{}/{}'.format(user.port, alias)
         answer = create_handler('request').run(alias, command, port)
-
+        print(answer)
         if answer == 200:
             for f in sql.File.query.all():
                 if f.owner == user:

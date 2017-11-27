@@ -1,11 +1,13 @@
 
 from time import time
 from time import sleep
+import json
 from threading import Lock
 from threading import Timer
 from db import sql
 import requests
 
+MAX_SIZE = 2 * 1024 * 1024 * 1024
 
 def make_update_files_request(server):
     print('Send uneedupdate to {}'.format(server.address))
@@ -105,33 +107,46 @@ class HandlerSubmitted(Handler):
     def run(self, *args):
         print('HandlerSubmitted is started.')
 
-        size = args[0]
+        size = int(args[0])
         path = args[1]
+        main_addr = args[2]
 
         user_name = path.split('/')[0]
         user_id = sql.User.query.filter_by(alias=user_name).first().id
         print(user_id)
 
         if HandlerSubmitted.check_availbel_size(user_name, size) is False:
-            return 'Your storage is full', 400
+            return json.dumps({'status': 'not allowed'}), 200
 
-        file = sql.File(name=path, size=size, user_id=user_id)
+        if sql.File.query.filter_by(name='/'+path).first() is not None:
+            return json.dumps({'status': 'not allowed'}), 200
+
+        file = sql.File(name='/'+path, size=size, user_id=user_id)
         sql.db.session.add(file)
         sql.db.session.commit()
 
         HandlerSubmitted.updated_size(user_name, size)
 
-        return '', 200
+        server_id = sql.Server.query.filter_by(address=main_addr).first().id
+        cluster_id = int((server_id - 1) / 3) + 1
+        cluster = sql.Cluster.query.filter_by(id=str(cluster_id)).first()
+
+        slave1 = sql.Cluster.query.filter_by(id=str(cluster_id)).first().seconds1
+        slave2 = sql.Cluster.query.filter_by(id=str(cluster_id)).first().seconds2
+
+        replica_list = [slave1.address, slave2.address]
+
+        return json.dumps({'status': 'not allowed', 'relicas': replica_list}), 200
 
     @staticmethod
     def check_availbel_size(user_name, size):
         available_size = sql.User.query.filter_by(alias=user_name).first().size
-        return available_size + size <= available_size
+        return int(available_size) + size <= MAX_SIZE
 
     @staticmethod
     def updated_size(user_name, size):
         user = sql.User.query.filter_by(alias=user_name).first()
-        user.size += size
+        user.size = str(int(user.size) + size)
         sql.db.session.commit()
 
 

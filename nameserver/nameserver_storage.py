@@ -25,7 +25,7 @@ def request_read():
 
 @flask_ns_storage.route('/submitted/<size>/<path:file_name>', methods=['GET'])
 def request_submitted(size, file_name):
-    return create_handler('submitted').run(size, file_name)
+    return create_handler('submitted').run(size, file_name, request.environ['REMOTE_ADDR'])
 
 
 @flask_ns_storage.route('/updated', methods=['POST'])
