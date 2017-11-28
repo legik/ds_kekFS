@@ -5,3 +5,4 @@ nameserver/__pycache__/*
 storage_server/env/*
 db/cfg.py
 db/__pycache__/*
+client/__pycache__/*
