@@ -29,7 +29,7 @@ class HandlerRegister(Handler):
                 users_count = sql.db.session.query(sql.User).count()
                 port = self.choose_port(users_count)
                 cluster = self.choose_cluster(users_count)
-                user = sql.User(alias=str(username), password=str(password), cluster=cluster, port=port, size=0)
+                user = sql.User(alias=str(username), password=str(password), cluster=cluster, port=port, size=0, description='')
                 sql.db.session.add(user)
                 sql.db.session.commit()
                 create_handler('init').run(username)
@@ -163,7 +163,7 @@ class HandlerDelete(Handler):
         if not user:
             return 'Wrong request parameters', 400
         port = user.port + 10
-        client_request = 'delete/{}/{}'.format(alias, path)
+        client_request = 'delete/{}'.format(path)
         answer = create_handler('request').run(alias, client_request, port)
         s = '/{}/{}'.format(alias, path)
         if answer == 200:

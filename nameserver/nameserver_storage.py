@@ -35,8 +35,12 @@ def request_updated_replic():
 
 @flask_ns_storage.route('/update_failed', methods=['POST'])
 def request_update_failed():
-    return create_handler('update_failed').run(request.environ['REMOTE_ADDR'])
+    return create_handler('updated_failed').run(request.environ['REMOTE_ADDR'])
 
+
+@flask_ns_storage.route('/remove_user/<user_name>', methods=['POST'])
+def request_remove_user(user_name):
+    return create_handler('remove_user').run(user_name)
 
 if __name__ == '__main__':
     flask_ns_storage.run(host='0.0.0.0', port=5010, threaded=True)

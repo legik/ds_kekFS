@@ -123,17 +123,24 @@ class HandlerSubmitted(Handler):
 
         size = int(args[0])
         path = args[1]
-        main_addr = args[2]
+        addr = args[2]
+
+        server_id = sql.Server.query.filter_by(address=addr).first().id
+        cluster_id = int((server_id - 1) / 3) + 1
+        cluster = sql.Cluster.query.filter_by(id=str(cluster_id)).first()
+
+        if cluster.mains.address != addr:
+            return json.dumps({'status': 'not allowed - not prime serv'}), 200
 
         user_name = path.split('/')[0]
         user_id = sql.User.query.filter_by(alias=user_name).first().id
         print(user_id)
 
         if HandlerSubmitted.check_availbel_size(user_name, size) is False:
-            return json.dumps({'status': 'not allowed'}), 200
+            return json.dumps({'status': 'not allowed - size'}), 200
 
         if sql.File.query.filter_by(name='/'+path).first() is not None:
-            return json.dumps({'status': 'not allowed'}), 200
+            return json.dumps({'status': 'not allowed - exists'}), 200
 
         file = sql.File(name='/'+path, size=size, user_id=user_id)
         sql.db.session.add(file)
@@ -141,16 +148,18 @@ class HandlerSubmitted(Handler):
 
         HandlerSubmitted.updated_size(user_name, size)
 
-        server_id = sql.Server.query.filter_by(address=main_addr).first().id
-        cluster_id = int((server_id - 1) / 3) + 1
-        cluster = sql.Cluster.query.filter_by(id=str(cluster_id)).first()
-
         slave1 = sql.Cluster.query.filter_by(id=str(cluster_id)).first().seconds1
         slave2 = sql.Cluster.query.filter_by(id=str(cluster_id)).first().seconds2
 
-        replica_list = [slave1.address, slave2.address]
+        replica_list = []
 
-        return json.dumps({'status': 'not allowed', 'relicas': replica_list}), 200
+        if slave1.status is True:
+            replica_list.append(slave1.address)
+
+        if slave2.status is True:
+            replica_list.append(slave2.address)
+
+        return json.dumps({'status': 'allowed', 'replicas': replica_list}), 200
 
     @staticmethod
     def check_availbel_size(user_name, size):
@@ -194,6 +203,41 @@ class HandlerUpdatedFailed(Handler):
         server = sql.Server.query.filter_by(address=server_addr).first()
         make_update_files_request(server)
 
+        return '', 200
+
+
+class HandlerRemoveUser(Handler):
+    def __init__(self):
+        super(HandlerRemoveUser, self).__init__()
+
+    def run(self, *args):
+        print('HandlerUpdated is started.')
+
+        user_name = args[0]
+
+        user = sql.User.query.filter_by(alias=user_name).first()
+        if user is None:
+            return 'User not found', 200
+
+        cluster = sql.Cluster.query.filter_by(id=user.cluster).first()
+
+        while True:
+            file = sql.File.query.filter_by(user_id=user.id).first()
+            if file is None:
+                break
+            sql.db.session.delete(file)
+
+
+        sql.db.session.delete(user)
+        sql.db.session.commit()
+
+        servers = [cluster.mains, cluster.second1, cluster.second2]
+        for serv in servers:
+            try:
+                url = '{0}:8010/kill/{1}'.format(serv.address, user_name)
+                requests.post(url)
+            except:
+                pass
 
         return '', 200
 
@@ -204,7 +248,8 @@ handlerAlive = HandlerAlive()
 def create_handler(type):
     global handlerAlive
     handlers = {'alive': handlerAlive, 'submitted': HandlerSubmitted(),
-                'updated': HandlerUpdated(), 'updated_failed': HandlerUpdatedFailed()}
+                'updated': HandlerUpdated(), 'updated_failed': HandlerUpdatedFailed(),
+                'remove_user': HandlerRemoveUser()}
 
     if type in handlers.keys():
         return handlers[type]

@@ -103,6 +103,11 @@ def request_test():
     return create_handler('alive').run(r)
 
 
+@flask_ns_client.route('/submitted/<size>/<path:file_name>', methods=['GET'])
+def request_submitted(size, file_name):
+    return 'ok', 200
+
+
 if __name__ == '__main__':
     flask_ns_client.secret_key = urandom(12)
     flask_ns_client.run(host='0.0.0.0', port=5000, debug=True, threaded=False)
