@@ -33,7 +33,6 @@ class HandlerRegister(Handler):
                 sql.db.session.add(user)
                 sql.db.session.commit()
                 create_handler('init').run(username)
-
                 return 'User successfully registered', 200
             except:
                 return 'Wrong request parameters', 400
@@ -291,9 +290,6 @@ class HandlerRequest(Handler):
         port = args[2]
         print('HandlerRequest is started. user: {} command {}'.format(alias, command))
         servers = sql.User.query.filter_by(alias=str(alias)).first().tenant
-
-        # TODO: change returning values to requests, not requests code
-
         servers_array = {servers.mains.address: servers.mains,
                          servers.seconds1.address: servers.seconds1,
                          servers.seconds2.address: servers.seconds2}

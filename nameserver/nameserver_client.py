@@ -110,4 +110,4 @@ def request_submitted(size, file_name):
 
 if __name__ == '__main__':
     flask_ns_client.secret_key = urandom(12)
-    flask_ns_client.run(host='0.0.0.0', port=5000, debug=True, threaded=False)
+    flask_ns_client.run(host='0.0.0.0', port=5000, debug=False, threaded=False)
