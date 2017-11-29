@@ -239,15 +239,15 @@ class HandlerRmDir(Handler):
         port = user.port + 10
         client_request = 'rmdir/{}'.format(path)
         answer = create_handler('request').run(alias, client_request, port)
-        s = '/{}/{}/%'.format(alias, path)
+        s = '/{}/{}%'.format(alias, path)
         if answer == 200:
             for f in sql.db.session.query(sql.File).filter(sql.File.name.like(s)).all():
                 if f.owner == user:
                     user.size = user.size - f.size
                     sql.db.session.delete(f)
-            dir = sql.db.session.query(sql.File).filter_by(name=path).first()
-            sql.db.session.delete(dir)
             sql.db.session.commit()
+            # dir = sql.db.session.query(sql.File).filter_by(name=path).first()
+            # sql.db.session.delete(dir)
             return 'Success', 200
         else:
             return 'Wrong request parameters', 401
