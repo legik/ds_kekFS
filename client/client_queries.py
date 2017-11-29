@@ -232,12 +232,3 @@ class client_queries():
         else:
             logging.warning(client_queries.time() + '   Something goes wrong')
         return ''
-
-
-
-
-
-'''if __name__ == '__main__':
-    coo = {'user': 'name', 'auth': '1A0KiTjUhe5NFur2yLWs68qBSglpvwmZEn3DM7xI'}
-    client_queries.login('stas', 'pass')
-    pass'''

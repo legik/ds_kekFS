@@ -179,8 +179,8 @@ class Ui_MainWindow(object):
 
     def updateDirTree(self):
         model = QtGui.QStandardItemModel()
-        model.appendRow(QtGui.QStandardItem('root'))
-        model.appendRow(QtGui.QStandardItem('back'))
+        model.appendRow(QtGui.QStandardItem('/'))
+        model.appendRow(QtGui.QStandardItem('..'))
         path = self.pathLabel.text()[15:]
         model.setHorizontalHeaderLabels(["Name","Size","Type"])
         try:
@@ -272,14 +272,3 @@ class Ui_MainWindow(object):
 
     atexit.register(exit_handler)
 
-
-
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    coo = {'user': 'name', 'auth': '1A0KiTjUhe5NFur2yLWs68qBSglpvwmZEn3DM7xI'}
-    ui.setupUi(MainWindow, 'name', coo)
-    MainWindow.show()
-    sys.exit(app.exec_())
