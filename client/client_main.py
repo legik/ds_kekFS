@@ -218,12 +218,12 @@ class Ui_MainWindow(object):
                         path = name
                     else:
                         path = self.pathLabel.text()[15:] + name
-                        mfile = client_queries.read(path, self.userName, self.cookies)
-                        tmpfile = tempfile.mkstemp(prefix = name, dir = self.dirpath)
-                        with open(tmpfile[1],'wb') as handle:
-                            for block in mfile.iter_content(1024):
-                                handle.write(block)
-                        webbrowser.open(tmpfile[1])
+                    mfile = client_queries.read(path, self.userName, self.cookies)
+                    tmpfile = tempfile.mkstemp(prefix = name, dir = self.dirpath)
+                    with open(tmpfile[1],'wb') as handle:
+                        for block in mfile.iter_content(1024):
+                            handle.write(block)
+                    webbrowser.open(tmpfile[1])
             else:
                 self.pathLabel.setText(self.pathLabel.text() + name + '/')
                 self.updateDirTree()
