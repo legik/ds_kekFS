@@ -9,7 +9,6 @@ from config import NAMESERVER_1
 LAST_UPDATE_FILE = 'storage/files/{0}_last_update'
 UPDATES_FILE = 'storage/files/{0}_update.log'
 LOCK = 'storage/files/{0}_filelock'
-#RENAMES_FILE = 'storage/files/{0}_renames'
 
 
 def log_update(user, path, operation, new_name=None):
@@ -69,16 +68,6 @@ def rename(user, path, new_name):
         return False
     try:
         shutil.move(full_path, new_full_path)
-        #
-        #     os.symlink(new_full_path, full_path)
-        # else:
-        #     lock = FileLock(LOCK.format(user))
-        #     with lock:
-        #         with open(RENAMES_FILE.format(user), 'r') as f:
-        #             renames = json.loads(f.read())
-        #         renames[path] = new_path
-        #         with open(RENAMES_FILE.format(user), 'w') as f:
-        #             f.write(json.dumps(renames))
         if os.path.isdir(new_full_path):
             log_update(user, path, 'rename_dir', new_path)
         else:
@@ -98,7 +87,7 @@ def ask_nameserver(size, path, user):
 
 async def write_replica(address, port, path, temp_path):
     f = {'file': open(temp_path,'rb')}
-    requests.post('http://{0}:{1}/write/{2}'.format(address, port, path), files=f)
+    requests.post('http://{0}:{1}/replicate/{2}'.format(address, port, path), files=f)
 
 
 async def async_replicate(replica_list, port, path, temp_path):
@@ -155,14 +144,4 @@ def get_update_list(user, version):
                     update_list.append(update)
     return update_list
 
-
-# def new_path_if_renamed(user, path):
-#     new_path = path
-#     lock = FileLock(LOCK.format(user))
-#     with lock:
-#         with open(RENAMES_FILE.format(user), 'r') as f:
-#             renames = json.loads(f.read())
-#     while renames[new_path] in renames:
-#         new_path = renames[new_path]
-#     return new_path
 

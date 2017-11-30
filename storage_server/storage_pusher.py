@@ -1,15 +1,15 @@
 from flask import Flask, request
-import os
 import storage_writes
 import requests
 import os
 
 USERNAME = os.environ['SPUSH_USERNAME']
-PORT = os.environ['SPUSH_PORT']
+PORT = os.environ['SPUSH_PORT']  # writer in range 8030-8039
 
 app = Flask(__name__)
 
 
+# tested
 @app.route('/push_updates/<int:version>', methods=['GET'])
 def push_updates(version):
     writes = {}  # {'old_name': 'new_name', }
@@ -38,12 +38,12 @@ def push_updates(version):
                 url = 'http://{0}:{1}/delete/{2}'.format(request.remote_addr, PORT, item['path'])
                 r = requests.post(url)
             elif item['operation'] == 'write':
-                url = 'http://{0}:{1}/write/{2}'.format(request.remote_addr, PORT, item['path'])
+                url = 'http://{0}:{1}/replicate/{2}'.format(request.remote_addr, PORT, item['path'])
                 file_full_path = storage_writes.get_full_path(USERNAME, writes[item['path']])
                 try:
-                	f = {'file': open(file_full_path, 'rb')}
+                    f = {'file': open(file_full_path, 'rb')}
                 except:
-                	f = {'file': open('storage/empty', 'rb')}
+                    f = {'file': open('storage/empty', 'rb')}
                 try:
                     r = requests.post(url, files=f)
                     if r.status_code != 200:
@@ -57,4 +57,3 @@ def push_updates(version):
                 return 'Fatal error\n', 500
         update_list = storage_writes.get_update_list(USERNAME, version)
     return 'Success\n'
-

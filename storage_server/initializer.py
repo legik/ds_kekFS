@@ -12,6 +12,7 @@ import requests
 provider_pool = {}
 replicator_pool = {}
 updaters_pool = {}
+pushers_poll = {}
 mapping = {}
 nonces = {}
 heartbeat = ''
@@ -19,8 +20,6 @@ updating = 'updating'
 update_failed = 'update_failed'
 update_status = {updating: False, update_failed: False}
 print(update_status[update_failed])
-
-
 
 MAPPING = 'storage/mapping.json'
 
@@ -31,22 +30,33 @@ def new_provider(port, username):
     if username in provider_pool:
         provider_pool[username].terminate()
     new_env = os.environ.copy()
-    new_env['FLASK_APP'] = 'storage_provider.py'
+    new_env['FLASK_APP'] = 'storage_reader.py'
     new_env['SSC_PORT'] = str(port)
     new_env['SSC_USERNAME'] = str(username)
     provider_pool[username] = Popen(['flask', 'run', '-h', '0.0.0.0', '-p', str(port)], env=new_env)
-    return provider_pool[username].pid
+    return
 
 
 def new_replicator(port, username):
     if username in replicator_pool:
         replicator_pool[username].terminate()
     new_env = os.environ.copy()
-    new_env['FLASK_APP'] = 'storage_replicator.py'
+    new_env['FLASK_APP'] = 'storage_writer.py'
     new_env['SR_PORT'] = str(port)
     new_env['SR_USERNAME'] = str(username)
     replicator_pool[username] = Popen(['flask', 'run', '-h', '0.0.0.0', '-p', str(port)], env=new_env)
-    return replicator_pool[username].pid
+    return
+
+
+def new_pusher(username):
+    if username in pushers_poll:
+        pushers_poll[username].terminate()
+    new_env = os.environ.copy()
+    new_env['FLASK_APP'] = 'storage_pusher.py'
+    new_env['SPUSH_PORT'] = str(mapping[username]['r_port'])
+    new_env['SPUSH_USERNAME'] = str(username)
+    pushers_poll[username] = Popen(['flask', 'run', '-h', '0.0.0.0', '-p', str(int(mapping[username]['r_port']) + 10)], env=new_env)
+    return
 
 
 def new_updater(username, port, master_address, nonce):
@@ -106,9 +116,6 @@ def init(port, username):
     f.close()
     f = open('storage/files/{0}_filelock'.format(username), 'w')
     f.write('')
-    f.close()
-    f = open('storage/files/{0}_renames'.format(username), 'w')
-    f.write('{}')
     f.close()
     new_provider(port, username)
     new_replicator(port + 10, username)
@@ -196,15 +203,8 @@ def updated(user, nonce):
             return 'Fail\n', 400
     if len(nonces) == 0 and update_status[update_failed] is True:
         print('Branch 2')
-        try:
-            requests.post('http://{0}/update_failed'.format(NAMESERVER_1))
-            update_status[updating] = False
-            update_status[update_failed] = False
-        except Exception as e:
-            print(e)
-            update_status[updating] = False
-            update_status[update_failed] = False
-            return 'Fail\n', 400
+        update_status[updating] = False
+        update_status[update_failed] = False
     return 'Success\n'
 
 
@@ -216,13 +216,22 @@ def update_failed_fun(user, nonce):
     del updaters_pool[user]
     update_status[update_failed] = True
     if len(nonces) == 0:
-        try:
-            requests.post('http://{0}/update_failed'.format(NAMESERVER_1))
-            update_status[updating] = False
-            update_status[update_failed] = False
-        except Exception as e:
-            print(e)
-            update_status[updating] = False
-            update_status[update_failed] = False
-            return 'Fail\n', 400
+        update_status[updating] = False
+        update_status[update_failed] = False
+    return 'Success\n'
+
+
+@app.route('/create_pusher/<username>', methods=['GET'])
+def give_pusher(username):
+    if username not in mapping:
+        return 'Wrong parameters', 404
+    new_pusher(username)
+    return 'Success\n', 200
+
+
+@app.route('/kill_pusher/<username>', methods=['GET'])
+def kill_pusher(username):
+    if username not in mapping:
+        return 'Wrong parameters', 404
+    pushers_poll[username].terminate()
     return 'Success\n'
