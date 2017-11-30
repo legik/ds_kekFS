@@ -143,7 +143,7 @@ class HandlerWrite(Handler):
             servers = user.tenant
             port = user.port
             ip_main = servers.mains.address
-            json_answer = '{{ "servers" : [ "{}:{}" ] }}'.format(ip_main, port)
+            json_answer = '{{ "servers" : [ "{}:{}" ] }}'.format(ip_main, (int(port) + 10))
             return json_answer
         except:
             return 'Wrong request parameters', 400
@@ -299,11 +299,14 @@ class HandlerRequest(Handler):
             if serv.status is False:
                 continue
 
-            addr = '{}:{}'.format(ip, port)
-            r = self.request_post(command, addr)
+            try:
+                addr = '{}:{}'.format(ip, port)
+                r = self.request_post(command, addr)
 
-            if r.status_code == 200:
-                flag = True
+                if r.status_code == 200:
+                    flag = True
+            except:
+                pass
 
         if flag is True:
             return 200
